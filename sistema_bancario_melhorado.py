@@ -11,10 +11,12 @@ MAX_TENTATIVAS_LOGIN = 3
 # Classe que define propriedades de um usuário do sistema bancário.
 class Usuario:
 
-    def __init__(self, nome, cpf, senha):
+    def __init__(self, nome, data_nascimento, cpf, endereco, senha):
 
         self.nome = nome
+        self.data_nascimento = data_nascimento
         self.__cpf = cpf
+        self.endereco = endereco
         self.senha = senha
 
     @property
@@ -24,13 +26,15 @@ class Usuario:
     def to_dict(self):
         return {
             'nome': self.nome,
+            'data_nascimento': self.data_nascimento,
             'cpf': self.cpf,
+            'endereco': self.endereco,
             'senha': self.senha
         }
     
     @staticmethod
     def from_dict(dados):
-        return Usuario(dados['nome'], dados['cpf'], dados['senha'])
+        return Usuario(dados['nome'], dados['data_nascimento'], dados['cpf'], dados['endereco'], dados['senha'])
     
     def __eq__(self, other):
         return self.nome == other.nome and self.cpf == other.cpf
@@ -151,6 +155,34 @@ def criar_usuario(usuarios):
         print('\nOperação cancelada.')
         return None
     
+    endereco = input('\nDigite seu endereço no formato "logradouro, nro - bairro - cidade/sigla estado": ')
+
+    while endereco.count(',') != 1 or endereco.count('-') != 2 or endereco.count('/') != 1:
+        if endereco == 'c':
+            break
+        else:
+            endereco = input('\nFormato inválido. Digite seu endereço no formato "logradouro, nro - bairro - cidade/sigla estado" ou [c] para cancelar: ')
+
+    if endereco == 'c':
+        print('\nOperação cancelada.')
+        return None
+    
+    data_nascimento = input('\nDigite sua data de nascimento no formato DD/MM/AAAA: ')
+
+    while True:
+        if data_nascimento == 'c':
+            break
+        else:
+            try:
+                datetime.strptime(data_nascimento, "%d/%m/%Y")
+                break
+            except:
+                data_nascimento = input('\nFormato inválido. Digite sua data de nascimento no formato DD/MM/AAAA ou [c] para cancelar: ')
+        
+    if data_nascimento == 'c':
+        print('\nOperação cancelada.')
+        return None
+    
     senha = getpass.getpass('\nDigite uma senha a ser utilizada para acessar seu usuário e suas contas: ', stream=None)
 
     while len(senha) < 4:
@@ -175,7 +207,7 @@ def criar_usuario(usuarios):
         print('\nOperação cancelada.')
         return None
     
-    usuario = Usuario(nome, cpf, senha)
+    usuario = Usuario(nome, data_nascimento, cpf, endereco, senha)
     print(f'\n{repr(usuario)} criado com sucesso! Agora você pode fazer o login no menu principal.')
 
     return usuario
@@ -299,7 +331,7 @@ def acessar_conta(usuario, contas):
 
 
 # Função de depósito.
-def deposito(conta_acessada):
+def deposito(conta_acessada, /):
 
     valor = input('\nDigite o valor que deseja depositar, ou [c] para cancelar a operação: ')
 
@@ -338,7 +370,7 @@ def deposito(conta_acessada):
 
 
 # Função de saque.
-def saque(conta_acessada):
+def saque(*, conta_acessada):
 
     # Capturando o dia de hoje
     HOJE = date.today().strftime('%Y-%m-%d')
@@ -393,14 +425,14 @@ def saque(conta_acessada):
 
 
 # Função de extrato.
-def imprimir_extrato(conta_acessada):
+def imprimir_extrato(saldo, /, *, extrato):
     print('\n############################## EXTRATO ##############################')
-    if len(conta_acessada.historico['extrato']['data']) == 0:
+    if len(extrato['data']) == 0:
         print('Ainda não há movimentações nessa conta.')
     else:
-        for data, texto in zip(conta_acessada.historico['extrato']['data'], conta_acessada.historico['extrato']['texto']):
+        for data, texto in zip(extrato['data'], extrato['texto']):
             print(data, texto, sep='\t')
-    print(f'\nSaldo total: {conta_acessada.historico["saldo"]:.2f}')
+    print(f'\nSaldo total: {saldo:.2f}')
     print('#####################################################################\n')
 
 
@@ -427,12 +459,12 @@ Digite [q] caso deseje sair da conta e voltar ao menu de usuário.
                 conta_acessada.historico = conta_acessada_deposito.historico
 
         elif opcao == 's':
-            conta_acessada_saque = saque(conta_acessada)
+            conta_acessada_saque = saque(conta_acessada=conta_acessada)
             if conta_acessada_saque:
                 conta_acessada.historico = conta_acessada_saque.historico
 
         elif opcao == 'e':
-            imprimir_extrato(conta_acessada)
+            imprimir_extrato(conta_acessada.historico['saldo'], extrato=conta_acessada.historico['extrato'])
 
         elif opcao == 'q':
             sair_conta = input('\nTem certeza que deseja sair? [s/n]: ')
