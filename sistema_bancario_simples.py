@@ -31,8 +31,7 @@ except:
     saldo = 0
     historico['saldo'] = saldo
     n_saques = 0
-    saques = []
-    historico['saques'] = saques
+    historico['saques'] = []
     extrato = {'data': [], 'texto': []}
     historico['extrato'] = extrato
 
@@ -176,6 +175,7 @@ while True:
 if zerar_conta != 's':
     # Salvando histórico de operações:
     historico['saldo'] = saldo
+    historico['extrato'] = extrato
 
     with open('sistema_bancario_simples_historico.json', 'w') as fp:
         json.dump(historico, fp, indent=4)
